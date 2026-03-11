@@ -1,0 +1,336 @@
+name: RestaurantOS CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  SONAR_HOST_URL: https://sonarcloud.io
+  JAVA_VERSION: 17
+
+jobs:
+  # Stage 1: Code Quality & Analysis
+  quality-analysis:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Build with Gradle
+        run: ./gradlew build -x test
+
+      - name: Run SonarQube Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./gradlew sonarqube \
+            -Dsonar.projectKey=restaurantos \
+            -Dsonar.organization=${{ secrets.SONAR_ORG }} \
+            -Dsonar.host.url=${{ env.SONAR_HOST_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      - name: Cache build outputs
+        uses: actions/cache@v3
+        with:
+          path: build/
+          key: build-${{ github.sha }}
+
+  # Stage 2: Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: quality-analysis
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Run Unit Tests
+        run: ./gradlew test --no-daemon
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-test-results
+          path: build/test-results/test/
+
+      - name: Publish Test Results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: build/test-results/test/TEST-*.xml
+
+  # Stage 3: Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Run Integration Tests
+        run: ./gradlew test --tests "com.example.restaurant.karate.KarateIntegrationTest" --no-daemon
+
+      - name: Upload Integration Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-results
+          path: build/test-results/test/
+
+  # Stage 4: Security Scanning
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: quality-analysis
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Run Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'RestaurantOS'
+          path: '.'
+          format: 'SARIF'
+          args: >-
+            --enableExperimental
+            --scan build/libs/
+
+      - name: Upload SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: reports/dependency-check-report.sarif
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy Results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: trivy-results.sarif
+
+  # Stage 5: Build Docker Image
+  build-image:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    permissions:
+      contents: read
+      packages: write
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and Push Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+  # Stage 6: Performance Testing
+  performance-test:
+    name: Performance Testing with K6
+    runs-on: ubuntu-latest
+    needs: build-image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run k6 Load Test
+        uses: grafana/k6-action@v0.3.0
+        with:
+          filename: k6-performance-test.js
+          cloud: false
+        env:
+          BASE_URL: http://localhost:8081
+
+      - name: Upload k6 Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: k6-performance-results
+          path: k6-results/
+
+  # Stage 7: Deploy to Kubernetes (Development)
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [security-scan, build-image]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    environment:
+      name: development
+      url: https://dev.restaurantos.com
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s-configmap.yaml
+          kubectl apply -f k8s-deployment.yaml
+          kubectl rollout status deployment/restaurantos-api -n restaurantos --timeout=5m
+
+      - name: Verify Deployment
+        run: |
+          kubectl get pods -n restaurantos
+          kubectl get services -n restaurantos
+
+  # Stage 8: Deploy to Kubernetes (Production)
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [security-scan, build-image, performance-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://api.restaurantos.com
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG_PROD }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Update Deployment Image
+        run: |
+          kubectl set image deployment/restaurantos-api \
+            restaurantos=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.sha }} \
+            -n restaurantos
+
+      - name: Rollout Deployment
+        run: |
+          kubectl rollout status deployment/restaurantos-api -n restaurantos --timeout=5m
+
+      - name: Smoke Tests
+        run: |
+          for i in {1..10}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://api.restaurantos.com/api/v1/health)
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "Health check passed"
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          body: |
+            Production deployment completed successfully.
+            Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.sha }}
+
+  # Stage 9: Notifications
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [quality-analysis, unit-tests, integration-tests, security-scan, build-image]
+    if: always()
+    steps:
+      - name: Send Slack Notification
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "RestaurantOS Pipeline Status",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Pipeline:* ${{ job.status }}\n*Commit:* ${{ github.sha }}\n*Branch:* ${{ github.ref }}"
+                  }
+                }
+              ]
+            }

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restaurantos-config
+  namespace: restaurantos
+data:
+  kafka-bootstrap-servers: "kafka:9092"
+  server-port: "8081"
+  spring-profiles-active: "kubernetes"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restaurantos-secrets
+  namespace: restaurantos
+type: Opaque
+stringData:
+  db-url: "jdbc:postgresql://postgres:5432/restaurantos"
+  db-username: "restaurantos"
+  db-password: "change-me-in-production"
+  jwt-secret: "your-super-secret-jwt-key-change-in-production"
+

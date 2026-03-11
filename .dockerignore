@@ -1,0 +1,15 @@
+.dockerignore
+.git
+.gitignore
+.gradle
+.idea
+.vscode
+build
+dist
+node_modules
+*.md
+*.log
+.DS_Store
+k8s-*
+sonar-project.properties
+

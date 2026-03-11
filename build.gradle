@@ -1,0 +1,85 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.2'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '1.0.0'
+description = 'RestaurantOS - Comprehensive Restaurant Management Platform with Kafka and High Concurrency Support'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Spring Boot Core
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	
+	// Spring Security for Authentication
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.security:spring-security-crypto'
+	
+	// Database - PostgreSQL (Free, Open Source)
+	runtimeOnly 'org.postgresql:postgresql'
+	
+	// Database Migrations - Flyway
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+	
+	// Kafka for Messaging
+	implementation 'org.springframework.kafka:spring-kafka'
+	
+	// Lombok for reducing boilerplate
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	
+	// Monitoring - Prometheus & Micrometer
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+	
+	// JSON Processing
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0'
+	
+	// UUID and utilities
+	implementation 'org.apache.commons:commons-lang3'
+	implementation 'com.google.guava:guava:33.0.0-jre'
+	
+	// Testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-test-autoconfigure'
+	testImplementation 'org.springframework.kafka:spring-kafka-test'
+	testImplementation 'org.mockito:mockito-core'
+	testImplementation 'org.mockito:mockito-junit-jupiter'
+	testImplementation 'io.karatelabs:karate-junit5:1.5.2'
+	testImplementation 'com.h2database:h2'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	
+	// Embedded Kafka for Integration Testing
+	testImplementation 'org.testcontainers:testcontainers:1.19.3'
+	testImplementation 'org.testcontainers:postgresql:1.19.3'
+	
+	// JWT Token Support
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
