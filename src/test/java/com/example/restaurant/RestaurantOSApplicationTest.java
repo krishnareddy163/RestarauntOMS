@@ -9,7 +9,11 @@ class RestaurantOSApplicationTest {
     @Test
     void main_startsWithNoWeb() {
         assertDoesNotThrow(() ->
-                RestaurantOSApplication.main(new String[]{"--spring.main.web-application-type=none"})
+                RestaurantOSApplication.main(new String[]{
+                        "--spring.main.web-application-type=none",
+                        "--spring.profiles.active=test",
+                        "--restaurantos.security.enabled=false"
+                })
         );
     }
 }

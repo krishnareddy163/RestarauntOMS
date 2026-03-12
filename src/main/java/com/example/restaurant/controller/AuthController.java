@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auth")
 @ConditionalOnWebApplication
 @ConditionalOnProperty(name = "spring.main.web-application-type", havingValue = "servlet", matchIfMissing = true)
+@ConditionalOnProperty(name = "restaurantos.security.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthenticationManager authenticationManager;

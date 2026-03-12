@@ -21,6 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @ConditionalOnWebApplication
 @ConditionalOnProperty(name = "spring.main.web-application-type", havingValue = "servlet", matchIfMissing = true)
+@ConditionalOnProperty(name = "restaurantos.security.enabled", havingValue = "true", matchIfMissing = true)
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class WebSecurityConfig {
