@@ -168,6 +168,9 @@ jobs:
       packages: write
     if: github.event_name == 'push'
     steps:
+      - name: Set Lowercase Image Name
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
