@@ -39,9 +39,14 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            String jwt = jwtUtils.generateJwtToken(authentication);
+            Object principal = authentication.getPrincipal();
+            if (!(principal instanceof UserDetailsImpl userDetails) || userDetails.getId() == null) {
+                log.error("Authentication principal is missing required user details for {}", loginRequest.getEmail());
+                return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Invalid email or password"));
+            }
 
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            String jwt = jwtUtils.generateJwtToken(authentication);
 
             return ResponseEntity.ok(new AuthResponse(jwt,
                     userDetails.getId(),

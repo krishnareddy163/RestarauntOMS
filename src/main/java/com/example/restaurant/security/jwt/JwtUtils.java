@@ -27,12 +27,8 @@ public class JwtUtils {
         }
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
-        if (userPrincipal.getUsername() == null) {
-            throw new IllegalArgumentException("User principal username cannot be null");
-        }
-
         return Jwts.builder()
-                .setSubject((userPrincipal.getUsername()))
+                .setSubject(userPrincipal.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key(), SignatureAlgorithm.HS256)

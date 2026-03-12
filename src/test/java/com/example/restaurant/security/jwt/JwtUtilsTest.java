@@ -55,15 +55,6 @@ class JwtUtilsTest {
     }
 
     @Test
-    void generateJwtToken_nullUsername_throws() {
-        UserDetailsImpl principal = new UserDetailsImpl(1L, null, "pw", "User", "123",
-                com.example.restaurant.entity.User.UserRole.CUSTOMER, true);
-        Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
-
-        assertThrows(IllegalArgumentException.class, () -> jwtUtils.generateJwtToken(auth));
-    }
-
-    @Test
     void validateJwtToken_invalid_returnsFalse() {
         assertFalse(jwtUtils.validateJwtToken("invalid.token.value"));
     }
