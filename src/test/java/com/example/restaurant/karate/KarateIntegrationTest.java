@@ -5,11 +5,13 @@ import com.intuit.karate.Runner;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(com.example.restaurant.config.TestSecurityConfig.class)
 @ActiveProfiles("test")
 class KarateIntegrationTest {
 
