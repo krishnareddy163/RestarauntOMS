@@ -318,19 +318,14 @@ jobs:
     if: always()
     steps:
       - name: Send Slack Notification
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v2.0.0
         with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
           payload: |
-            {
-              "text": "RestaurantOS Pipeline Status",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Pipeline:* ${{ job.status }}\n*Commit:* ${{ github.sha }}\n*Branch:* ${{ github.ref }}"
-                  }
-                }
-              ]
-            }
+            text: "RestaurantOS Pipeline Status"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "*Pipeline:* ${{ job.status }}\n*Commit:* ${{ github.sha }}\n*Branch:* ${{ github.ref }}"
