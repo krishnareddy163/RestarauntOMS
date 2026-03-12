@@ -20,7 +20,7 @@ public class RestaurantEventConsumer {
     @KafkaListener(
             topics = "${kafka.topics.order-created}",
             groupId = "${spring.kafka.consumer.group-id}",
-            containerFactory = "kafkaListenerContainerFactory"
+            containerFactory = "orderCreatedListenerContainerFactory"
     )
     public void handleOrderCreatedEvent(OrderCreatedEvent event) {
         try {
@@ -36,7 +36,7 @@ public class RestaurantEventConsumer {
     @KafkaListener(
             topics = "${kafka.topics.payment-processed}",
             groupId = "${spring.kafka.consumer.group-id}",
-            containerFactory = "kafkaListenerContainerFactory"
+            containerFactory = "paymentProcessedListenerContainerFactory"
     )
     public void handlePaymentProcessedEvent(PaymentProcessedEvent event) {
         try {
@@ -53,7 +53,7 @@ public class RestaurantEventConsumer {
     @KafkaListener(
             topics = "${kafka.topics.preparation-completed}",
             groupId = "${spring.kafka.consumer.group-id}",
-            containerFactory = "kafkaListenerContainerFactory"
+            containerFactory = "preparationCompletedListenerContainerFactory"
     )
     public void handlePreparationCompletedEvent(PreparationCompletedEvent event) {
         try {
@@ -68,7 +68,7 @@ public class RestaurantEventConsumer {
     @KafkaListener(
             topics = "${kafka.topics.delivery-completed}",
             groupId = "${spring.kafka.consumer.group-id}",
-            containerFactory = "kafkaListenerContainerFactory"
+            containerFactory = "deliveryCompletedListenerContainerFactory"
     )
     public void handleDeliveryCompletedEvent(DeliveryCompletedEvent event) {
         try {
@@ -81,4 +81,3 @@ public class RestaurantEventConsumer {
         }
     }
 }
-

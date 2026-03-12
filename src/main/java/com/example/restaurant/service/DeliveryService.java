@@ -109,10 +109,11 @@ public class DeliveryService {
             orderRepository.save(order);
 
             // Publish event
+            Long driverId = delivery.getDriver() != null ? delivery.getDriver().getId() : null;
             eventProducer.publishDeliveryCompletedEvent(DeliveryCompletedEvent.builder()
                     .deliveryId(delivery.getId())
                     .orderId(order.getId())
-                    .driverId(delivery.getDriver().getId())
+                    .driverId(driverId)
                     .status("COMPLETED")
                     .deliveredAt(delivery.getDeliveryTime().toString())
                     .build());
@@ -151,11 +152,14 @@ public class DeliveryService {
     }
 
     private DeliveryResponse convertToResponse(Delivery delivery) {
+        Long orderId = delivery.getOrder() != null ? delivery.getOrder().getId() : null;
+        Long driverId = delivery.getDriver() != null ? delivery.getDriver().getId() : null;
+        String status = delivery.getStatus() != null ? delivery.getStatus().toString() : null;
         return DeliveryResponse.builder()
                 .id(delivery.getId())
-                .orderId(delivery.getOrder().getId())
-                .driverId(delivery.getDriver().getId())
-                .status(delivery.getStatus().toString())
+                .orderId(orderId)
+                .driverId(driverId)
+                .status(status)
                 .currentLatitude(delivery.getCurrentLatitude())
                 .currentLongitude(delivery.getCurrentLongitude())
                 .pickupTime(delivery.getPickupTime())

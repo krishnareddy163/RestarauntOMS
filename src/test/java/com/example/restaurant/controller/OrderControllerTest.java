@@ -7,6 +7,9 @@ import com.example.restaurant.service.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,6 +21,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -72,6 +76,7 @@ public class OrderControllerTest {
         assertNotNull(response.getBody());
         assertEquals(1L, response.getBody().getId());
         verify(metricsService, times(1)).recordOrderCreated();
+        verify(metricsService, times(1)).recordOrderProcessingTime(anyLong());
     }
 
     @Test
@@ -108,6 +113,44 @@ public class OrderControllerTest {
     }
 
     @Test
+    public void testGetOrderNotFound() {
+        when(orderService.getOrder(1L)).thenThrow(new RuntimeException("Not found"));
+
+        ResponseEntity<OrderResponse> response = orderController.getOrder(1L);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNull(response.getBody());
+    }
+
+    @Test
+    public void testGetCustomerOrders() {
+        OrderResponse orderResponse = OrderResponse.builder()
+                .id(1L)
+                .customerId(1L)
+                .status("CONFIRMED")
+                .totalAmount(new BigDecimal("11.98"))
+                .build();
+        Page<OrderResponse> page = new PageImpl<>(List.of(orderResponse), PageRequest.of(0, 10), 1);
+        when(orderService.getCustomerOrders(eq(1L), any())).thenReturn(page);
+
+        ResponseEntity<Page<OrderResponse>> response = orderController.getCustomerOrders(1L, PageRequest.of(0, 10));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().getTotalElements());
+    }
+
+    @Test
+    public void testGetCustomerOrdersNotFound() {
+        when(orderService.getCustomerOrders(eq(1L), any())).thenThrow(new RuntimeException("Not found"));
+
+        ResponseEntity<Page<OrderResponse>> response = orderController.getCustomerOrders(1L, PageRequest.of(0, 10));
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNull(response.getBody());
+    }
+
+    @Test
     public void testUpdateOrderStatus() {
         // Arrange
         doNothing().when(orderService).updateOrderStatus(1L, "PREPARING");
@@ -119,5 +162,13 @@ public class OrderControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(orderService, times(1)).updateOrderStatus(1L, "PREPARING");
     }
-}
 
+    @Test
+    public void testUpdateOrderStatusFailure() {
+        doThrow(new RuntimeException("bad status")).when(orderService).updateOrderStatus(1L, "BAD");
+
+        ResponseEntity<Void> response = orderController.updateOrderStatus(1L, "BAD");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+}

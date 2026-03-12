@@ -143,14 +143,17 @@ public class OrderService {
                         .build())
                 .collect(Collectors.toList());
 
+        Long customerId = order.getCustomer() != null ? order.getCustomer().getId() : null;
+        String status = order.getStatus() != null ? order.getStatus().toString() : null;
+        String deliveryType = order.getDeliveryType() != null ? order.getDeliveryType().toString() : null;
         return OrderResponse.builder()
                 .id(order.getId())
-                .customerId(order.getCustomer().getId())
-                .status(order.getStatus().toString())
+                .customerId(customerId)
+                .status(status)
                 .totalAmount(order.getTotalAmount())
                 .deliveryAddress(order.getDeliveryAddress())
                 .specialInstructions(order.getSpecialInstructions())
-                .deliveryType(order.getDeliveryType().toString())
+                .deliveryType(deliveryType)
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
                 .completedAt(order.getCompletedAt())

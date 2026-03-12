@@ -13,8 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class RestaurantEventConsumerTest {
@@ -63,5 +62,33 @@ class RestaurantEventConsumerTest {
     void handleDeliveryCompletedEvent_releasesInventory() {
         consumer.handleDeliveryCompletedEvent(DeliveryCompletedEvent.builder().orderId(5L).build());
         verify(inventoryService).releaseReservedInventory(5L);
+    }
+
+    @Test
+    void handleOrderCreatedEvent_exception_isHandled() {
+        doThrow(new RuntimeException("fail")).when(preparationService).initiatePreperation(10L);
+        consumer.handleOrderCreatedEvent(OrderCreatedEvent.builder().orderId(10L).build());
+        verify(preparationService).initiatePreperation(10L);
+    }
+
+    @Test
+    void handlePaymentProcessedEvent_exception_isHandled() {
+        doThrow(new RuntimeException("fail")).when(preparationService).startPreparation(11L);
+        consumer.handlePaymentProcessedEvent(PaymentProcessedEvent.builder().orderId(11L).status("SUCCESS").build());
+        verify(preparationService).startPreparation(11L);
+    }
+
+    @Test
+    void handlePreparationCompletedEvent_exception_isHandled() {
+        doThrow(new RuntimeException("fail")).when(deliveryService).assignDelivery(12L);
+        consumer.handlePreparationCompletedEvent(PreparationCompletedEvent.builder().orderId(12L).build());
+        verify(deliveryService).assignDelivery(12L);
+    }
+
+    @Test
+    void handleDeliveryCompletedEvent_exception_isHandled() {
+        doThrow(new RuntimeException("fail")).when(inventoryService).releaseReservedInventory(13L);
+        consumer.handleDeliveryCompletedEvent(DeliveryCompletedEvent.builder().orderId(13L).build());
+        verify(inventoryService).releaseReservedInventory(13L);
     }
 }

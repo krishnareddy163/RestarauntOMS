@@ -130,4 +130,62 @@ public class PaymentServiceTest {
         assertEquals("REFUNDED", response.getStatus());
         verify(paymentRepository, times(1)).save(any());
     }
+
+    @Test
+    public void testRefundPaymentNotSuccessful_throws() {
+        Payment payment = Payment.builder()
+                .id(2L)
+                .order(order)
+                .amount(new BigDecimal("20.00"))
+                .paymentMethod(Payment.PaymentMethod.CREDIT_CARD)
+                .status(Payment.PaymentStatus.PENDING)
+                .build();
+
+        when(paymentRepository.findById(2L)).thenReturn(Optional.of(payment));
+
+        assertThrows(RuntimeException.class, () -> paymentService.refundPayment(2L));
+    }
+
+    @Test
+    public void testGetPayment_success() {
+        Payment payment = Payment.builder()
+                .id(3L)
+                .order(order)
+                .amount(new BigDecimal("50.00"))
+                .paymentMethod(Payment.PaymentMethod.CREDIT_CARD)
+                .status(Payment.PaymentStatus.SUCCESS)
+                .build();
+
+        when(paymentRepository.findById(3L)).thenReturn(Optional.of(payment));
+
+        PaymentResponse response = paymentService.getPayment(3L);
+
+        assertNotNull(response);
+        assertEquals(3L, response.getId());
+    }
+
+    @Test
+    public void testGetPaymentByOrderId_success() {
+        Payment payment = Payment.builder()
+                .id(4L)
+                .order(order)
+                .amount(new BigDecimal("50.00"))
+                .paymentMethod(Payment.PaymentMethod.CREDIT_CARD)
+                .status(Payment.PaymentStatus.SUCCESS)
+                .build();
+
+        when(paymentRepository.findByOrderId(1L)).thenReturn(Optional.of(payment));
+
+        PaymentResponse response = paymentService.getPaymentByOrderId(1L);
+
+        assertNotNull(response);
+        assertEquals(4L, response.getId());
+    }
+
+    @Test
+    public void testGetPaymentByOrderId_missing_throws() {
+        when(paymentRepository.findByOrderId(1L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> paymentService.getPaymentByOrderId(1L));
+    }
 }
