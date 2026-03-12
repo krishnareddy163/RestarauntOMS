@@ -9,7 +9,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  SONAR_HOST_URL: https://sonarcloud.io
   JAVA_VERSION: 17
 
 jobs:
@@ -37,15 +36,8 @@ jobs:
         run: ./gradlew build -x test
 
       - name: Run SonarQube Analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./gradlew sonarqube \
-            -Dsonar.projectKey=restaurantos \
-            -Dsonar.organization=${{ secrets.SONAR_ORG }} \
-            -Dsonar.host.url=${{ env.SONAR_HOST_URL }} \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+        if: false
+        run: echo "SonarQube disabled (no server/token configured)."
 
       - name: Cache build outputs
         uses: actions/cache@v3
@@ -311,21 +303,4 @@ jobs:
             Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.sha }}
 
   # Stage 9: Notifications
-  notify:
-    name: Send Notifications
-    runs-on: ubuntu-latest
-    needs: [quality-analysis, unit-tests, integration-tests, security-scan, build-image]
-    if: always()
-    steps:
-      - name: Send Slack Notification
-        uses: slackapi/slack-github-action@v2.0.0
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK }}
-          webhook-type: incoming-webhook
-          payload: |
-            text: "RestaurantOS Pipeline Status"
-            blocks:
-              - type: "section"
-                text:
-                  type: "mrkdwn"
-                  text: "*Pipeline:* ${{ job.status }}\n*Commit:* ${{ github.sha }}\n*Branch:* ${{ github.ref }}"
+  # Disabled: no email/Slack configuration provided.
