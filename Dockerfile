@@ -1,19 +1,19 @@
 # Multi-stage build for RestaurantOS
-FROM eclipse-temurin:17-jdk-alpine as builder
+FROM gradle:9.3.0-jdk17 AS builder
 
-WORKDIR /build
+WORKDIR /home/gradle/project
 
 # Copy gradle files
-COPY gradlew .
-COPY gradle gradle
-COPY build.gradle .
-COPY settings.gradle .
+COPY --chown=gradle:gradle gradle gradle
+COPY --chown=gradle:gradle gradlew .
+COPY --chown=gradle:gradle build.gradle .
+COPY --chown=gradle:gradle settings.gradle .
 
 # Copy source code
-COPY src src
+COPY --chown=gradle:gradle src src
 
 # Build the application
-RUN ./gradlew build -x test --no-daemon
+RUN gradle build -x test --no-daemon
 
 # Runtime stage
 FROM eclipse-temurin:17-jre-alpine
@@ -24,7 +24,7 @@ WORKDIR /app
 RUN apk add --no-cache curl
 
 # Copy JAR from builder
-COPY --from=builder /build/build/libs/demo-security-1.0.0.jar app.jar
+COPY --from=builder /home/gradle/project/build/libs/demo-security-1.0.0.jar app.jar
 
 # Create non-root user
 RUN addgroup -g 1001 appuser && \
@@ -44,4 +44,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
-
