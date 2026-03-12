@@ -94,3 +94,25 @@ tasks.jacocoTestReport {
 		html.required = true
 	}
 }
+
+tasks.jacocoTestCoverageVerification {
+	dependsOn tasks.test
+	violationRules {
+		rule {
+			element = 'CLASS'
+			excludes = [
+				'com.example.restaurant.dto.*',
+				'com.example.restaurant.entity.*'
+			]
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.95
+			}
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn tasks.jacocoTestCoverageVerification
+}

@@ -22,7 +22,14 @@ public class JwtUtils {
     private int jwtExpirationMs;
 
     public String generateJwtToken(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new IllegalArgumentException("Authentication principal cannot be null");
+        }
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
+
+        if (userPrincipal.getUsername() == null) {
+            throw new IllegalArgumentException("User principal username cannot be null");
+        }
 
         return Jwts.builder()
                 .setSubject((userPrincipal.getUsername()))
@@ -58,4 +65,3 @@ public class JwtUtils {
         return false;
     }
 }
-

@@ -31,8 +31,8 @@ public class RestaurantEventProducer {
     public void publishOrderCreatedEvent(OrderCreatedEvent event) {
         try {
             if (event == null || event.getOrderId() == null) {
-                log.error("Cannot publish event with null values");
-                throw new IllegalArgumentException("Event or order ID cannot be null");
+                log.error("Cannot publish order created event: null event or order ID");
+                throw new IllegalArgumentException("Order created event or order ID cannot be null");
             }
             
             String messageKey = event.getOrderId().toString();
@@ -50,7 +50,7 @@ public class RestaurantEventProducer {
                 }
             });
         } catch (IllegalArgumentException e) {
-            log.error("Invalid event data: {}", e.getMessage());
+            log.error("Invalid order created event data: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error publishing order created event: {}", e.getMessage(), e);
@@ -61,8 +61,8 @@ public class RestaurantEventProducer {
     public void publishPaymentProcessedEvent(PaymentProcessedEvent event) {
         try {
             if (event == null || event.getOrderId() == null) {
-                log.error("Cannot publish event with null values");
-                throw new IllegalArgumentException("Event or order ID cannot be null");
+                log.error("Cannot publish payment processed event: null event or order ID");
+                throw new IllegalArgumentException("Payment processed event or order ID cannot be null");
             }
             
             String messageKey = event.getOrderId().toString();
@@ -80,7 +80,7 @@ public class RestaurantEventProducer {
                 }
             });
         } catch (IllegalArgumentException e) {
-            log.error("Invalid event data: {}", e.getMessage());
+            log.error("Invalid payment processed event data: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error publishing payment processed event: {}", e.getMessage(), e);
@@ -91,8 +91,8 @@ public class RestaurantEventProducer {
     public void publishPreparationCompletedEvent(PreparationCompletedEvent event) {
         try {
             if (event == null || event.getOrderId() == null) {
-                log.error("Cannot publish event with null values");
-                throw new IllegalArgumentException("Event or order ID cannot be null");
+                log.error("Cannot publish preparation completed event: null event or order ID");
+                throw new IllegalArgumentException("Preparation completed event or order ID cannot be null");
             }
             
             String messageKey = event.getOrderId().toString();
@@ -110,7 +110,7 @@ public class RestaurantEventProducer {
                 }
             });
         } catch (IllegalArgumentException e) {
-            log.error("Invalid event data: {}", e.getMessage());
+            log.error("Invalid preparation completed event data: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error publishing preparation completed event: {}", e.getMessage(), e);
@@ -121,8 +121,8 @@ public class RestaurantEventProducer {
     public void publishDeliveryCompletedEvent(DeliveryCompletedEvent event) {
         try {
             if (event == null || event.getOrderId() == null) {
-                log.error("Cannot publish event with null values");
-                throw new IllegalArgumentException("Event or order ID cannot be null");
+                log.error("Cannot publish delivery completed event: null event or order ID");
+                throw new IllegalArgumentException("Delivery completed event or order ID cannot be null");
             }
             
             String messageKey = event.getOrderId().toString();
@@ -140,7 +140,7 @@ public class RestaurantEventProducer {
                 }
             });
         } catch (IllegalArgumentException e) {
-            log.error("Invalid event data: {}", e.getMessage());
+            log.error("Invalid delivery completed event data: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error publishing delivery completed event: {}", e.getMessage(), e);
@@ -148,4 +148,3 @@ public class RestaurantEventProducer {
         }
     }
 }
-
