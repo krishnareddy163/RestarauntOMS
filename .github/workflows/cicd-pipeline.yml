@@ -68,7 +68,7 @@ jobs:
 
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-test-results
           path: build/test-results/test/
@@ -100,7 +100,7 @@ jobs:
 
       - name: Upload Integration Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: integration-test-results
           path: build/test-results/test/
@@ -126,6 +126,9 @@ jobs:
 
       - name: Run Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
+        env:
+          # setup-java overrides JAVA_HOME; dependency-check docker expects /opt/jdk
+          JAVA_HOME: /opt/jdk
         with:
           project: 'RestaurantOS'
           path: '.'
@@ -215,7 +218,7 @@ jobs:
 
       - name: Upload k6 Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: k6-performance-results
           path: k6-results/
